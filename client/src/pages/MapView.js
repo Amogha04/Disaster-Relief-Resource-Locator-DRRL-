@@ -2,39 +2,40 @@ import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import axios from "axios";
+import L from "leaflet";
+import userIconUrl from "../assets/user-icon.png";
+import reliefIconUrl from "../assets/relief-icon.png";
 
-// 🔍 Component to move map to user location
+// Icons
+const reliefIcon = new L.Icon({
+  iconUrl: reliefIconUrl,
+  iconSize: [40, 40],
+  iconAnchor: [20, 40],
+  popupAnchor: [0, -35],
+  className: "drop-shadow-xl",
+});
+
+const userIcon = new L.Icon({
+  iconUrl: userIconUrl,
+  iconSize: [40, 40],
+  iconAnchor: [20, 40],
+  popupAnchor: [0, -35],
+  className: "animate-pulse",
+});
+
 function FlyToUserLocation({ position }) {
   const map = useMap();
   useEffect(() => {
-    if (position) {
-      map.flyTo(position, 14); // zoom level 14
-    }
+    if (position) map.flyTo(position, 14);
   }, [position, map]);
   return null;
-}
-
-// 📏 Haversine formula to calculate distance in km between 2 lat/lng points
-function getDistanceInKm(lat1, lon1, lat2, lon2) {
-  const R = 6371; // Earth radius in km
-  const dLat = (lat2 - lat1) * (Math.PI / 180);
-  const dLon = (lon2 - lon1) * (Math.PI / 180);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * (Math.PI / 180)) *
-      Math.cos(lat2 * (Math.PI / 180)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
 }
 
 export default function MapView() {
   const [reliefCenters, setReliefCenters] = useState([]);
   const [userPos, setUserPos] = useState(null);
-  const [filterRadius, setFilterRadius] = useState(5); // default 5km
+  const [darkMode, setDarkMode] = useState(false);
 
-  // 🌐 Fetch centers
   useEffect(() => {
     axios
       .get("http://localhost:5000/api/relief-centers")
@@ -42,70 +43,81 @@ export default function MapView() {
       .catch((err) => console.error("Failed to fetch centers", err));
   }, []);
 
-  // 📍 Get user location
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setUserPos([pos.coords.latitude, pos.coords.longitude]);
-        },
-        (err) => {
-          console.error("Geolocation denied or error", err);
-        }
+        (pos) => setUserPos([pos.coords.latitude, pos.coords.longitude]),
+        (err) => console.error("Geolocation error", err)
       );
     }
   }, []);
 
   return (
-    <div className="relative h-screen w-full z-0">
-      {/* 🔘 Filter Dropdown */}
-      <div className="p-4 bg-white shadow z-10 absolute top-4 left-4 rounded-lg">
-        <label className="text-sm font-medium text-gray-800 mr-2">Show within:</label>
-        <select
-          value={filterRadius}
-          onChange={(e) => setFilterRadius(Number(e.target.value))}
-          className="border border-gray-300 rounded px-2 py-1 text-sm"
-        >
-          <option value={1}>1 km</option>
-          <option value={5}>5 km</option>
-          <option value={10}>10 km</option>
-          <option value={25}>25 km</option>
-          <option value={50}>50 km</option>
-        </select>
+    <div className="relative h-screen w-full bg-black">
+
+      {/* 🌞 / 🌙 Toggle Button */}
+<div className="absolute top-5 right-5 z-[1000]">
+  <button
+    onClick={() => setDarkMode((prev) => !prev)}
+    className={`w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-all duration-300
+      ${darkMode ? "bg-white text-black" : "bg-black text-white"} hover:scale-110`}
+    title="Toggle Theme"
+  >
+    {darkMode ? "🌞" : "🌙"}
+  </button>
+</div>
+
+
+      {/* 📍 Header */}
+      <div className="absolute top-5 left-1/2 transform -translate-x-1/2 z-[1000] bg-white/10 backdrop-blur-lg border border-white/30 text-white px-6 py-3 rounded-xl shadow-xl text-lg font-semibold">
+        📍 Real-Time Disaster Relief Map
       </div>
 
-      <MapContainer center={[12.9716, 77.5946]} zoom={13} className="h-full w-full">
+      {/* 🗺️ Map */}
+      <MapContainer
+        center={[12.9716, 77.5946]}
+        zoom={13}
+        className="h-full w-full z-0"
+      >
         <TileLayer
-          attribution='© <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+  attribution='© <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+  url={
+    darkMode
+      ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+      : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+  }
+/>
 
-        {/* 🎯 Show user location */}
+
         {userPos && (
-          <Marker position={userPos}>
-            <Popup>You are here</Popup>
+          <Marker position={userPos} icon={userIcon}>
+            <Popup>You are here 🚶</Popup>
           </Marker>
         )}
 
-        {/* 🚑 Show filtered relief centers */}
-        {reliefCenters
-          .filter((center) => {
-            if (!userPos) return true; // show all if user position unknown
-            const dist = getDistanceInKm(userPos[0], userPos[1], center.lat, center.lng);
-            return dist <= filterRadius;
-          })
-          .map((center) => (
-            <Marker key={center._id} position={[center.lat, center.lng]}>
-              <Popup>
-                <strong>{center.name}</strong>
-                <br />
-                {center.details}
-              </Popup>
-            </Marker>
-          ))}
+        {reliefCenters.map((center) => (
+          <Marker
+            key={center._id}
+            position={[center.lat, center.lng]}
+            icon={reliefIcon}
+          >
+            <Popup>
+              <strong>{center.name}</strong>
+              <br />
+              {center.details}
+            </Popup>
+          </Marker>
+        ))}
 
         <FlyToUserLocation position={userPos} />
       </MapContainer>
+
+      {/* ➕ Floating Add Button */}
+      <div className="absolute bottom-6 right-6 z-[1000]">
+        <button className="bg-indigo-600 hover:bg-indigo-800 text-white px-5 py-3 rounded-full shadow-xl text-lg font-semibold transition transform hover:scale-105">
+          ➕ Add Relief Center
+        </button>
+      </div>
     </div>
   );
 }

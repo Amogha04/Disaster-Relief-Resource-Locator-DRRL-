@@ -5,7 +5,6 @@ import Admin from "./pages/Admin";
 import AddCenter from "./pages/AddCenter"; 
 import ManageCenters from "./pages/ManageCenters"; 
 import AdminLogin from "./pages/AdminLogin"; 
-import Admin from "./pages/Admin";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {

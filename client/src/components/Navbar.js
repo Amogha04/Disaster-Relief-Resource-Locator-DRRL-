@@ -1,36 +1,29 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { FaGlobeAmericas, FaHome, FaMapMarkerAlt, FaShieldAlt } from "react-icons/fa";
 
 export default function Navbar() {
-  const navigate = useNavigate();
-  const token = localStorage.getItem("drrl_admin_token");
-
-  const handleLogout = () => {
-    localStorage.removeItem("drrl_admin_token");
-    navigate("/admin");
-  };
-
   return (
-    <nav className="bg-white shadow-md py-4 px-6 flex justify-between items-center">
-      <h1 className="text-xl font-bold text-indigo-700">DRRL</h1>
+    <nav className="sticky top-0 z-50 bg-white/10 backdrop-blur-lg border-b border-white/20 text-white px-6 py-4 shadow-md flex items-center justify-between">
+      {/* 🔵 Logo on the left */}
+      <div className="flex items-center gap-2 text-2xl font-bold">
+        <FaGlobeAmericas className="text-blue-300" />
+        <span>DRRL</span>
+      </div>
 
-      <div className="space-x-4 text-sm sm:text-base flex items-center">
-        <Link to="/" className="text-gray-700 hover:text-indigo-700 font-medium">Home</Link>
-        <Link to="/map" className="text-gray-700 hover:text-indigo-700 font-medium">Map</Link>
-        
-        {!token ? (
-          <Link to="/admin" className="text-gray-700 hover:text-indigo-700 font-medium">Admin</Link>
-        ) : (
-          <>
-            <Link to="/admin/add" className="text-gray-700 hover:text-indigo-700 font-medium">Add Center</Link>
-            <Link to="/admin/manage" className="text-gray-700 hover:text-indigo-700 font-medium">Manage</Link>
-            <button
-              onClick={handleLogout}
-              className="text-red-500 hover:text-red-700 font-medium ml-2"
-            >
-              Logout
-            </button>
-          </>
-        )}
+      {/* 🗺️ Links on the right */}
+      <div className="flex items-center gap-6 text-lg font-medium">
+        <Link to="/" className="flex items-center gap-2 hover:text-blue-200 transition">
+          <FaHome />
+          Home
+        </Link>
+        <Link to="/map" className="flex items-center gap-2 hover:text-blue-200 transition">
+          <FaMapMarkerAlt />
+          Map
+        </Link>
+        <Link to="/admin" className="flex items-center gap-2 hover:text-blue-200 transition">
+          <FaShieldAlt />
+          Admin
+        </Link>
       </div>
     </nav>
   );
