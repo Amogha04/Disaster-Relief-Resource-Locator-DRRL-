@@ -1,3 +1,7 @@
+/* Optional - just before @tailwind base; or globally apply this */
+.input {
+  @apply border border-gray-300 px-3 py-2 rounded w-full focus:outline-none focus:ring focus:ring-indigo-200;
+}
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
